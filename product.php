@@ -14,73 +14,154 @@ if (!$product) {
     die("Produk tidak ditemukan");
 }
 
+require 'includes/header.php';
+
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title><?php echo $product['nama']; ?></title>
+<a href="index.php" class="btn btn-secondary mb-3">
+    ← Kembali
+</a>
 
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-        rel="stylesheet">
-</head>
-<body>
+<div class="card">
 
-<div class="container mt-5">
+    <div class="card-body">
 
-    <a href="index.php" class="btn btn-secondary mb-3">
-        ← Kembali
-    </a>
+        <img
+            src="uploads/<?php echo $product['gambar']; ?>"
+            class="img-fluid mb-3"
+            style="max-width:300px;">
 
-    <div class="card">
+        <h1>
+            <?php echo $product['nama']; ?>
+        </h1>
 
-        <div class="card-body">
+        <h5>
+            Brand:
+            <?php echo $product['brand']; ?>
+        </h5>
 
-            <img
-                src="uploads/<?php echo $product['gambar']; ?>"
-                class="img-fluid mb-3"
-                style="max-width:300px;">
+        <h4>
+            Rp <?php echo number_format($product['harga']); ?>
+        </h4>
 
-            <h1>
-                <?php echo $product['nama']; ?>
-            </h1>
+        <p>
+            Stok:
+            <?php echo $product['stok']; ?>
+        </p>
 
-            <h5>
-                Brand:
-                <?php echo $product['brand']; ?>
-            </h5>
+        <?php if (
+            isset($_SESSION['user_id']) &&
+            $_SESSION['role'] == 'customer'
+        ) : ?>
 
-            <h4>
-                Rp <?php echo number_format($product['harga']); ?>
-            </h4>
+            <form action="add_to_cart.php" method="GET">
 
-            <p>
-                Stok:
-                <?php echo $product['stok']; ?>
-            </p>
+                <input
+                    type="hidden"
+                    name="id"
+                    value="<?php echo $product['id']; ?>">
 
-            <p>
-                Warna:
-                <?php echo $product['warna']; ?>
-            </p>
+                <label class="mb-2">
+                    Jumlah
+                </label>
 
-            <p>
-                Ukuran:
-                <?php echo $product['ukuran']; ?>
-            </p>
+                <div class="d-flex align-items-center mb-3">
 
-            <hr>
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="decreaseQuantity()">
 
-            <p>
-                <?php echo nl2br($product['deskripsi']); ?>
-            </p>
+                        -
 
-        </div>
+                    </button>
+
+                    <input
+                        type="number"
+                        id="quantity"
+                        name="quantity"
+                        value="1"
+                        min="1"
+                        max="<?php echo $product['stok']; ?>"
+                        class="form-control mx-2 text-center"
+                        style="width:80px;">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="increaseQuantity()">
+
+                        +
+
+                    </button>
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary">
+
+                    Tambah ke Keranjang
+
+                </button>
+
+            </form>
+
+        <?php endif; ?>
+
+        <p>
+            Warna:
+            <?php echo $product['warna']; ?>
+        </p>
+
+        <p>
+            Ukuran:
+            <?php echo $product['ukuran']; ?>
+        </p>
+
+        <hr>
+
+        <p>
+            <?php echo nl2br($product['deskripsi']); ?>
+        </p>
 
     </div>
 
 </div>
 
-</body>
-</html>
+<script>
+
+function increaseQuantity() {
+
+    let qty =
+        document.getElementById("quantity");
+
+    let max =
+        parseInt(qty.max);
+
+    let current =
+        parseInt(qty.value);
+
+    if (current < max) {
+
+        qty.value = current + 1;
+    }
+}
+
+function decreaseQuantity() {
+
+    let qty =
+        document.getElementById("quantity");
+
+    let current =
+        parseInt(qty.value);
+
+    if (current > 1) {
+
+        qty.value = current - 1;
+    }
+}
+
+</script>
+
+<?php require 'includes/footer.php'; ?>
