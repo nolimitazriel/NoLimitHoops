@@ -1,47 +1,102 @@
 <?php
 
-require __DIR__ . '/../../config/database.php';
-require __DIR__ . '/../../middleware/admin_only.php';
-$id = $_GET['id'];
+session_start();
 
-$query = "SELECT * FROM products WHERE id=$id";
-$result = mysqli_query($conn, $query);
+require __DIR__ . '/../../config/database.php';
+
+if (
+    !isset($_SESSION['user_id']) ||
+    $_SESSION['role'] != 'admin'
+) {
+
+    header("Location: ../../index.php");
+    exit;
+}
+
+$id = (int) $_GET['id'];
+
+$result = mysqli_query(
+    $conn,
+    "SELECT * FROM products
+     WHERE id = $id"
+);
 
 $product = mysqli_fetch_assoc($result);
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if (!$product) {
 
-    $nama = $_POST['nama'];
-    $brand = $_POST['brand'];
-    $harga = $_POST['harga'];
-    $stok = $_POST['stok'];
-    $warna = $_POST['warna'];
-    $ukuran = $_POST['ukuran'];
+    die("Produk tidak ditemukan.");
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+    $nama = mysqli_real_escape_string(
+        $conn,
+        $_POST['nama']
+    );
+
+    $brand = mysqli_real_escape_string(
+        $conn,
+        $_POST['brand']
+    );
+
+    $harga = (int) $_POST['harga'];
+
+    $stok = (int) $_POST['stok'];
+
+    $warna = mysqli_real_escape_string(
+        $conn,
+        $_POST['warna']
+    );
+
+    $ukuran = mysqli_real_escape_string(
+        $conn,
+        $_POST['ukuran']
+    );
+
+    $deskripsi = mysqli_real_escape_string(
+        $conn,
+        $_POST['deskripsi']
+    );
+
     $gambar = $product['gambar'];
-    if ($_FILES['gambar']['name'] != "") {
-        $gambar = $_FILES['gambar']['name'];
-        $tmp_name = $_FILES['gambar']['tmp_name'];
+
+    if (
+        isset($_FILES['gambar']) &&
+        $_FILES['gambar']['error'] == 0
+    ) {
+
+        $gambar =
+            time() .
+            '_' .
+            $_FILES['gambar']['name'];
+
         move_uploaded_file(
-            $tmp_name,
-                "../../uploads/" . $gambar
+            $_FILES['gambar']['tmp_name'],
+            __DIR__ .
+            '/../../uploads/' .
+            $gambar
         );
     }
-    $deskripsi = $_POST['deskripsi'];
 
-    $query = "UPDATE products SET
-        nama='$nama',
-        brand='$brand',
-        harga='$harga',
-        stok='$stok',
-        warna='$warna',
-        ukuran='$ukuran',
-        gambar='$gambar',
-        deskripsi='$deskripsi'
-        WHERE id=$id";
+    mysqli_query(
 
-    mysqli_query($conn, $query);
+        $conn,
 
-    header("Location: ../../index.php");
+        "UPDATE products
+         SET
+            nama = '$nama',
+            brand = '$brand',
+            harga = $harga,
+            stok = $stok,
+            warna = '$warna',
+            ukuran = '$ukuran',
+            deskripsi = '$deskripsi',
+            gambar = '$gambar'
+         WHERE id = $id"
+    );
+
+    header("Location: index.php");
     exit;
 }
 
@@ -50,74 +105,154 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html>
 <head>
+
     <title>Edit Produk</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
 </head>
 <body>
 
-<h1>Edit Produk</h1>
+<div class="container mt-5">
 
-<form method="POST" enctype="multipart/form-data">
+    <h1>Edit Produk</h1>
 
-    <p>Nama Produk</p>
-    <input
-        type="text"
-        name="nama"
-        value="<?php echo $product['nama']; ?>"
-        required>
+    <form
+        method="POST"
+        enctype="multipart/form-data">
 
-    <p>Brand</p>
-    <input
-        type="text"
-        name="brand"
-        value="<?php echo $product['brand']; ?>"
-        required>
+        <div class="mb-3">
 
-    <p>Harga</p>
-    <input
-        type="number"
-        name="harga"
-        value="<?php echo $product['harga']; ?>"
-        required>
+            <label>Nama Produk</label>
 
-    <p>Stok</p>
-    <input
-        type="number"
-        name="stok"
-        value="<?php echo $product['stok']; ?>"
-        required>
+            <input
+                type="text"
+                name="nama"
+                class="form-control"
+                value="<?php echo $product['nama']; ?>"
+                required>
 
-    <p>Warna</p>
-    <input
-        type="text"
-        name="warna"
-        value="<?php echo $product['warna']; ?>">
+        </div>
 
-    <p>Ukuran</p>
-    <input
-        type="text"
-        name="ukuran"
-        value="<?php echo $product['ukuran']; ?>">
+        <div class="mb-3">
 
-    <p>Gambar Saat Ini</p>
-    <img
-        src="../../uploads/<?php echo $product['gambar']; ?>"
-        width="150">
+            <label>Brand</label>
 
-    <p>Ganti Gambar (Opsional)</p>
-    <input
-        type="file"
-        name="gambar">
+            <input
+                type="text"
+                name="brand"
+                class="form-control"
+                value="<?php echo $product['brand']; ?>"
+                required>
 
-    <p>Deskripsi</p>
-    <textarea name="deskripsi"><?php echo $product['deskripsi']; ?></textarea>
+        </div>
 
-    <br><br>
+        <div class="mb-3">
 
-    <button type="submit">
-        Update Produk
-    </button>
+            <label>Harga</label>
 
-</form>
+            <input
+                type="number"
+                name="harga"
+                class="form-control"
+                value="<?php echo $product['harga']; ?>"
+                required>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Stok</label>
+
+            <input
+                type="number"
+                name="stok"
+                class="form-control"
+                value="<?php echo $product['stok']; ?>"
+                required>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Warna</label>
+
+            <input
+                type="text"
+                name="warna"
+                class="form-control"
+                value="<?php echo $product['warna']; ?>">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Ukuran</label>
+
+            <input
+                type="text"
+                name="ukuran"
+                class="form-control"
+                value="<?php echo $product['ukuran']; ?>">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Deskripsi</label>
+
+            <textarea
+                name="deskripsi"
+                class="form-control"
+                rows="5"><?php echo $product['deskripsi']; ?></textarea>
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Gambar Saat Ini</label>
+
+            <br>
+
+            <img
+                src="../../uploads/<?php echo $product['gambar']; ?>"
+                width="200"
+                class="mb-3">
+
+        </div>
+
+        <div class="mb-3">
+
+            <label>Ganti Gambar</label>
+
+            <input
+                type="file"
+                name="gambar"
+                class="form-control">
+
+        </div>
+
+        <button
+            type="submit"
+            class="btn btn-success">
+
+            Simpan Perubahan
+
+        </button>
+
+        <a
+            href="index.php"
+            class="btn btn-secondary">
+
+            Kembali
+
+        </a>
+
+    </form>
+
+</div>
 
 </body>
 </html>

@@ -2,6 +2,35 @@
 
 require 'config/database.php';
 
+$latest_query = "
+SELECT *
+FROM products
+ORDER BY id DESC
+LIMIT 4
+";
+
+$latest_result = mysqli_query(
+    $conn,
+    $latest_query
+);
+
+$best_query = "
+SELECT
+    products.*,
+    SUM(order_items.quantity) AS total_terjual
+FROM order_items
+JOIN products
+ON order_items.product_id = products.id
+GROUP BY products.id
+ORDER BY total_terjual DESC
+LIMIT 4
+";
+
+$best_result = mysqli_query(
+    $conn,
+    $best_query
+);
+
 $brand_query = "
 SELECT DISTINCT brand
 FROM products
@@ -130,6 +159,55 @@ require 'includes/header.php';
 
 ?>
 
+<div
+    class="hero-banner p-5 mb-5 text-white rounded"
+    style="
+        background-image:
+        linear-gradient(
+            rgba(0,0,0,0.6),
+            rgba(0,0,0,0.6)
+        ),
+        url('assets/banner1.jpg');
+
+        background-size: cover;
+        background-position: center;
+        min-height: 200px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    ">
+
+    <h1 class="display-4 fw-bold">
+        🏀 No Limit Hoops
+    </h1>
+
+    <p class="lead">
+
+        Step Beyond Limits.
+
+        <br>
+
+        Temukan sepatu basket original
+        terbaik untuk meningkatkan
+        performa Anda di lapangan.
+
+    </p>
+
+    <div class="mt-3">
+
+        <a
+            href="#products"
+            class="btn btn-warning btn-lg">
+
+            Belanja Sekarang
+
+        </a>
+
+    </div>
+
+</div>
+
 <h1 class="mb-4">
     🏀 No Limit Hoops
 </h1>
@@ -236,7 +314,9 @@ require 'includes/header.php';
 
 <?php endif; ?>
 
-<div class="row">
+<div
+    class="row"
+    id="products">
 <?php while($product = mysqli_fetch_assoc($result)) : ?>
 
 <div class="col-md-4 mb-4">
@@ -380,5 +460,141 @@ require 'includes/header.php';
     </ul>
 
 </nav>
+
+<h2 class="mb-3">
+    🔥 Produk Terbaru
+</h2>
+
+<div class="row mb-5">
+
+<?php while(
+    $latest =
+    mysqli_fetch_assoc($latest_result)
+) : ?>
+
+<div class="col-md-3">
+
+    <div class="card h-100">
+
+        <img
+            src="uploads/<?php echo $latest['gambar']; ?>"
+            class="card-img-top"
+            style="
+                height:200px;
+                object-fit:cover;
+            ">
+
+        <div class="card-body">
+
+            <h6>
+
+                <?php
+                echo $latest['nama'];
+                ?>
+
+            </h6>
+
+            <p>
+
+                Rp
+                <?php
+                echo number_format(
+                    $latest['harga']
+                );
+                ?>
+
+            </p>
+
+            <a
+                href="product.php?id=<?php echo $latest['id']; ?>"
+                class="btn btn-dark btn-sm">
+
+                Detail
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<?php endwhile; ?>
+
+</div>
+
+<h2 class="mb-3">
+    🏆 Produk Terlaris
+</h2>
+
+<div class="row mb-5">
+
+<?php while(
+    $best =
+    mysqli_fetch_assoc($best_result)
+) : ?>
+
+<div class="col-md-3">
+
+    <div class="card h-100">
+
+        <img
+            src="uploads/<?php echo $best['gambar']; ?>"
+            class="card-img-top"
+            style="
+                height:200px;
+                object-fit:cover;
+            ">
+
+        <div class="card-body">
+
+            <h6>
+
+                <?php
+                echo $best['nama'];
+                ?>
+
+            </h6>
+
+            <p>
+
+                Rp
+                <?php
+                echo number_format(
+                    $best['harga']
+                );
+                ?>
+
+            </p>
+
+            <span
+                class="badge bg-success">
+
+                Terjual
+                <?php
+                echo $best['total_terjual'];
+                ?>
+
+            </span>
+
+            <br><br>
+
+            <a
+                href="product.php?id=<?php echo $best['id']; ?>"
+                class="btn btn-dark btn-sm">
+
+                Detail
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<?php endwhile; ?>
+
+</div>
 
 <?php require 'includes/footer.php'; ?>
